@@ -1,0 +1,547 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="description" content="BIOL 2153 DNA repair recitation game"><title>Repair Crew</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,600;8..60,800&family=Source+Sans+3:wght@400;600;700&family=JetBrains+Mono:wght@500;700&display=swap"><style>
+/* Layout: one narrow column, a cell "case file" on top, the duplex as the stage, crew controls below. Palette follows the lecture deck (navy, teal, amber, red). */
+:root{
+  --bg:#eef3f6; --surface:#ffffff; --ink:#142a40; --muted:#5a6e80; --line:#d3dde5;
+  --tile:#e6edf2; --teal:#1b7f80; --teal-soft:#d6eeed; --amber:#c97d0e; --amber-soft:#fbecd2;
+  --red:#c02a2a; --red-soft:#f8dcdc; --green:#3b8547; --green-soft:#dcefdf;
+  --display:"Source Serif 4", Cambria, Georgia, serif;
+  --body:"Source Sans 3", Calibri, "Segoe UI", system-ui, sans-serif;
+  --mono:"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e1f31; --surface:#15293f; --ink:#e8eff5; --muted:#9bb0c2; --line:#2a4560;
+  --tile:#1e3954; --teal:#45b6b2; --teal-soft:#173f45; --amber:#f0a93a; --amber-soft:#463315;
+  --red:#ef5d5d; --red-soft:#4a1d22; --green:#6dc17a; --green-soft:#1b3d25; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e1f31; --surface:#15293f; --ink:#e8eff5; --muted:#9bb0c2; --line:#2a4560;
+  --tile:#1e3954; --teal:#45b6b2; --teal-soft:#173f45; --amber:#f0a93a; --amber-soft:#463315;
+  --red:#ef5d5d; --red-soft:#4a1d22; --green:#6dc17a; --green-soft:#1b3d25; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5;padding-inline:16px;padding-block:16px 40px}
+.wrap{max-width:720px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.15}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:3px solid var(--teal);outline-offset:2px}
+.eyebrow{font-size:12px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--teal)}
+.muted{color:var(--muted)}
+
+/* top bar */
+.bar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px}
+.brand .mark{width:34px;height:34px;border-radius:50%;background:var(--teal);display:grid;place-items:center}
+.brand h1{font-size:22px}
+.stats{display:flex;gap:8px;flex-wrap:wrap}
+.chip{background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:4px 12px;font-size:14px;font-variant-numeric:tabular-nums}
+.chip b{font-weight:700}
+.chip.toggle{display:flex;align-items:center;gap:6px}
+.chip.toggle[aria-pressed="false"]{color:var(--muted)}
+
+/* intro */
+.hero{display:flex;flex-direction:column;gap:12px;padding-block:8px}
+.hero h2{font-size:clamp(30px,7vw,44px);font-weight:800}
+.hero p{margin:0;max-width:62ch}
+.crew{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.crewcard{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.crewcard .ab{font-family:var(--mono);font-weight:700;color:var(--teal);font-size:14px}
+.crewcard .nm{font-weight:700}
+.crewcard .fx{font-size:14px;color:var(--muted)}
+.rules{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px;max-width:62ch}
+.form{display:flex;gap:10px;flex-wrap:wrap;align-items:end}
+.form label{display:flex;flex-direction:column;gap:4px;font-size:14px;font-weight:600;flex:1 1 220px}
+.form input{font:inherit;padding:10px 12px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.primary{background:var(--ink);color:var(--bg);border:0;border-radius:8px;padding:11px 20px;font-weight:700}
+.primary:hover{opacity:.9}
+.ghost{background:transparent;border:1px solid var(--line);border-radius:8px;padding:10px 16px;font-weight:600}
+.ghost[aria-pressed="true"]{border-color:var(--teal);color:var(--teal)}
+
+/* case file */
+.case{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:8px}
+.case h2{font-size:24px}
+.case p{margin:0}
+.where{display:inline-flex;gap:6px;align-items:center;font-size:13px;font-weight:600;background:var(--tile);border-radius:6px;padding:2px 8px;width:fit-content}
+
+/* fork clock */
+.clock{display:flex;flex-direction:column;gap:4px}
+.clock .lbl{display:flex;justify-content:space-between;font-size:13px;font-weight:600;color:var(--muted);font-variant-numeric:tabular-nums}
+.track{position:relative;height:10px;border-radius:999px;background:var(--tile);overflow:hidden}
+.fill{position:absolute;inset:0 auto 0 0;background:var(--amber);border-radius:999px;transition:width .1s linear}
+.fill.late{background:var(--red)}
+
+/* duplex */
+.stage{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 12px;display:flex;flex-direction:column;gap:8px}
+.stage .cap{display:flex;justify-content:space-between;gap:8px;font-size:13px;color:var(--muted);flex-wrap:wrap}
+.scroll{overflow-x:auto}
+.duplex{display:flex;align-items:stretch;gap:3px;min-width:min-content;margin:0 auto;width:fit-content;padding-block:6px}
+.end{display:flex;flex-direction:column;gap:3px;font-family:var(--mono);font-size:11px;color:var(--muted);justify-content:flex-start}
+.end span{height:34px;display:grid;place-items:center;width:18px}
+.col{display:flex;flex-direction:column;gap:3px}
+.cell{width:24px;height:34px;border-radius:5px;background:var(--tile);display:grid;place-items:center;font-family:var(--mono);font-weight:700;font-size:15px;position:relative;transition:background .25s,transform .25s}
+@media (min-width:480px){.cell{width:30px}}
+.cell sup{position:absolute;top:1px;right:2px;font-size:9px;font-weight:700}
+.cell.lesion{background:var(--amber);color:#fff}
+.cell.ring{box-shadow:0 0 0 3px var(--teal)}
+.cell.charge{animation:pulse 1s ease-in-out infinite}
+.cell.dimerL::after{content:"";position:absolute;right:-6px;top:50%;width:9px;height:4px;background:var(--amber);transform:translateY(-50%)}
+.cell.gap{background:transparent;border:2px dashed var(--line)}
+.cell.new{background:var(--teal);color:#fff}
+.cell.sealed{background:var(--teal-soft);color:var(--teal)}
+.cell.nick::after{content:"";position:absolute;right:-3px;top:4px;bottom:4px;width:2px;background:var(--ink)}
+.cell.indel{box-shadow:0 0 0 3px var(--amber)}
+.cell.mut{background:var(--red);color:#fff}
+.cell.dim{opacity:.45}
+.cell.sis{background:transparent;border:1px solid var(--line);color:var(--muted);font-weight:500}
+.cell.hidden{visibility:hidden}
+.spacer{width:16px;position:relative}
+.spacer::before{content:"";position:absolute;left:50%;top:0;bottom:0;border-left:2px dashed var(--red);transform:translateX(-50%) skewX(-12deg)}
+@keyframes pulse{50%{transform:translateY(-3px)}}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-2px;margin-right:4px}
+
+/* actions */
+.panel{display:flex;flex-direction:column;gap:10px}
+.panel h3{font-size:18px}
+.crewbtns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+@media (min-width:560px){.crewbtns{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.crewbtn{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;text-align:left;display:flex;flex-direction:column;gap:2px;min-width:0}
+.crewbtn:hover:not(:disabled){border-color:var(--teal)}
+.crewbtn .ab{font-family:var(--mono);font-weight:700;color:var(--teal);font-size:13px}
+.crewbtn .nm{font-weight:700;font-size:15px;line-height:1.25}
+.crewbtn:disabled{opacity:.4;cursor:not-allowed;text-decoration:line-through}
+.steps{display:flex;flex-direction:column;gap:8px}
+.stepbtn{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;text-align:left;display:flex;gap:10px;align-items:flex-start}
+.stepbtn:hover{border-color:var(--teal)}
+.stepbtn .k{font-weight:700;min-width:96px;color:var(--teal)}
+.done-list{display:flex;flex-direction:column;gap:6px;margin:0;padding:0;list-style:none}
+.done-list li{display:flex;gap:10px;align-items:flex-start;font-size:15px;padding:8px 12px;border-radius:8px;background:var(--teal-soft)}
+.done-list .n{font-family:var(--mono);font-weight:700;color:var(--teal)}
+.shake{animation:shake .35s}
+@keyframes shake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.note{border-radius:10px;padding:12px 14px;font-size:15px}
+.note.bad{background:var(--red-soft)}
+.note.ok{background:var(--amber-soft)}
+.note.good{background:var(--green-soft)}
+.note b{display:block;margin-bottom:2px}
+.result{border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:8px}
+.result.win{background:var(--green-soft)}
+.result.lose{background:var(--red-soft)}
+.result h3{font-size:22px}
+.result p{margin:0}
+
+/* summary */
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+td.num{font-variant-numeric:tabular-nums;text-align:right}
+.tag{display:inline-block;font-size:12px;font-weight:700;padding:1px 8px;border-radius:999px}
+.tag.win{background:var(--green-soft);color:var(--green)}
+.tag.lose{background:var(--red-soft);color:var(--red)}
+.big{font-family:var(--display);font-weight:800;font-size:56px;line-height:1;font-variant-numeric:tabular-nums}
+.q{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:10px;max-width:64ch}
+.save{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+.save i{width:8px;height:8px;border-radius:50%;background:var(--muted);flex:none}
+.save.on i{background:var(--green)}
+.save.off i{background:var(--amber)}
+.codebox{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:6px}
+.code{font-family:var(--mono);font-weight:700;font-size:26px;letter-spacing:.06em;user-select:all}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:end}
+.row label{display:flex;flex-direction:column;gap:4px;font-size:14px;font-weight:600;flex:1 1 180px;min-width:0}
+.row input{font:inherit;padding:9px 12px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.kpi .v{font-family:var(--display);font-weight:800;font-size:28px;font-variant-numeric:tabular-nums}
+.kpi .l{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+td .sub{display:block;font-size:12px;color:var(--muted)}
+.empty{padding:20px;text-align:center;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style><style>html{-webkit-text-size-adjust:100%}body{margin:0}[hidden]{display:none!important}</style></head><body>
+<div class="wrap" id="app"></div>
+
+<script>
+const COMP={A:'T',T:'A',G:'C',C:'G'};
+const comp=s=>[...s].map(c=>COMP[c]).join('');
+
+const CREW={
+  BER:{ab:'BER',nm:'Base excision repair',role:'Glycosylase crew',fx:'One damaged or missing base. Replaces one bad brick.'},
+  NER:{ab:'NER',nm:'Nucleotide excision repair',role:'Cut-out crew',fx:'Bulky lesions that kink the helix. Cuts out the whole stretch.'},
+  MMR:{ab:'MMR',nm:'Mismatch repair',role:'Spellcheck crew',fx:'Replication typos. Fixes the NEW strand.'},
+  DR:{ab:'DR',nm:'Direct reversal',role:'Undo crew',fx:'Photolyase or MGMT. Ctrl+Z without cutting.'},
+  NHEJ:{ab:'NHEJ',nm:'Non-homologous end joining',role:'Duct-tape crew',fx:'Double-strand breaks. Fast, works anytime, error-prone.'},
+  HR:{ab:'HR',nm:'Homologous recombination',role:'Backup-copy crew',fx:'Double-strand breaks. Copies a template. Slow, accurate.'}
+};
+
+const S={
+  berU:[['Recognize','Uracil-DNA glycosylase spots a U, a base that never belongs in DNA.'],['Remove','The glycosylase flips the U out; AP endonuclease nicks the backbone.'],['Resynthesize','DNA polymerase adds one C, reading the G across from it.'],['Seal','DNA ligase closes the nick.']],
+  berAP:[['Recognize','AP endonuclease finds an empty sugar where a G fell off.'],['Remove','AP endonuclease cuts the backbone and the empty sugar is cleared away.'],['Resynthesize','DNA polymerase adds a G, reading the C across from it.'],['Seal','DNA ligase closes the nick.']],
+  ner:[['Recognize','XP proteins detect the kink the dimer puts in the helix.'],['Remove','Cuts on both sides and lifts out a ~25–30 nt stretch, dimer included.'],['Resynthesize','DNA polymerase fills the gap, reading the undamaged strand.'],['Seal','DNA ligase closes the last nick.']],
+  mmr:[['Recognize','MutS clamps onto the G:T mismatch behind the fork.'],['Remove','MutL and MutH identify the NEW strand and strip a stretch containing the typo.'],['Resynthesize','DNA polymerase recopies the stretch from the parental strand.'],['Seal','DNA ligase closes the nick.']],
+  phl:[['Recognize','Photolyase binds the fused T–T dimer.'],['Absorb','Photolyase captures energy from visible sunlight.'],['Reverse','It breaks the bond between the two T’s. Nothing cut, nothing copied.']],
+  mgmt:[['Recognize','MGMT finds a methyl group stuck on guanine.'],['Transfer','MGMT moves the methyl onto its own cysteine.'],['Reverse','Normal G is back. MGMT is used up: one enzyme per lesion.']],
+  nhej:[['Recognize','Ku proteins grab both broken ends.'],['Process','The ragged ends are trimmed so they can fit. A few bases are lost.'],['Seal','DNA ligase IV glues the two ends back together.']],
+  hr:[['Resect','The broken ends are chewed back into single-strand tails.'],['Invade','Rad51 guides a tail into the matching template sequence.'],['Copy','DNA polymerase copies the missing sequence from the template.'],['Seal','The junction is resolved and ligase seals it.']]
+};
+
+const ROUNDS=[
+ {title:'Cytosine lost its amine',where:'Human liver cell · body temperature',
+  story:'No UV, no chemicals. Plain water chemistry knocked the amine group off a cytosine, and it is now uracil.',
+  top:'ATGCATGGCTACCG',lesion:{type:'base',strand:'top',i:8,show:'U'},path:'BER',span:[8,8],steps:S.berU,
+  why:{NER:'Overkill. NER cuts out ~25–30 nucleotides for bulky helix-kinking damage. One wrong base needs a one-brick fix.',MMR:'MMR fixes replication typos right behind the fork. This U appeared in resting DNA, with no new strand involved.'},
+  mut:{top:{8:'T'},bot:{8:'A'}},
+  mutation:'Polymerase read the U as T and paired it with A. One daughter cell now has T:A where C:G used to be. That is a permanent C→T mutation, and repair can no longer see it because T:A is a normal pair.',
+  takeaway:'Lindahl estimated 100–500 of these per cell per day. BER handles them one base at a time.'},
+ {title:'Noon on a soybean leaf',where:'Soybean leaf cell · full sun',
+  story:'UV fused two neighboring thymines into a dimer. The leaf is still sitting in bright sunlight.',
+  top:'GCAGTTCAGGCATC',lesion:{type:'dimer',strand:'top',i:4},path:'DR',alt:{NER:'NER would work, but plants carry photolyase, and it is sunny. The undo crew fixes this without cutting anything.'},span:[4,5],steps:S.phl,
+  why:{BER:'BER removes single damaged bases. A dimer is two bases welded together and kinks the helix.',MMR:'Nothing was mis-copied here. UV damaged existing DNA.'},
+  mut:{top:{4:'C'},bot:{4:'G'}},
+  mutation:'Polymerase stalled at the dimer and a bypass polymerase guessed wrong. The leaf cell lineage now carries a point mutation at that spot.',
+  takeaway:'Photolyase uses visible light to undo UV damage. Plants, fungi and bacteria have it.'},
+ {title:'Same dimer, different cell',where:'Farmer’s skin cell · same field, same noon',
+  story:'The farmer checking that soybean field got the same T–T dimer in a skin cell on the back of his neck.',
+  top:'ACGTTCGAGGCATC',lesion:{type:'dimer',strand:'top',i:3},path:'NER',span:[0,7],steps:S.ner,
+  why:{DR:'Placental mammals, us included, lost photolyase. Humans have no undo button for UV dimers.',BER:'BER handles one damaged base. A dimer is bulky and kinks the helix.',MMR:'Nothing was mis-copied. UV damaged existing DNA.'},
+  mut:{top:{3:'C',4:'C'},bot:{3:'G',4:'G'}},
+  mutation:'The dimer was copied with errors, leaving the classic UV signature: CC where TT should be. This is the kind of mutation that builds up toward skin cancer. In xeroderma pigmentosum, NER is broken and this happens constantly.',
+  takeaway:'Same lesion, different crew. Humans rely entirely on NER for UV damage.'},
+ {title:'A typo behind the fork',where:'Dividing gut cell · S phase',
+  story:'DNA polymerase put a T across from a G and proofreading missed it. The new strand has a G:T mismatch.',
+  top:'TTAGCGATCCAGTA',bot:'AATCGTTAGGTCAT',lesion:{type:'mismatch',strand:'bot',i:5,show:'T'},path:'MMR',span:[2,8],steps:S.mmr,
+  why:{BER:'Neither base is chemically damaged. G and T are both normal bases, just paired wrong. The trick is knowing which strand is new.',NER:'There is no bulky lesion here, just a wrong pairing.'},
+  mut:{top:{5:'A'},bot:{5:'T'}},
+  mutation:'The next round of replication used the wrong T as a template. One daughter cell now has A:T where G:C belongs. In Lynch syndrome, MMR is broken and these typos pile up.',
+  takeaway:'Mismatch repair takes accuracy from about 1 in 10 million to about 1 in 1–10 billion.'},
+ {title:'Alkylating agent exposure',where:'Lab worker’s lung cell',
+  story:'An alkylating chemical added a methyl group to the oxygen of a guanine (O⁶-methylguanine).',
+  top:'CAGTGACTGGATCC',lesion:{type:'base',strand:'top',i:4,show:'G',tag:'m'},path:'DR',span:[4,4],steps:S.mgmt,
+  why:{BER:'Close, but this G is fine apart from one extra methyl group. A single enzyme can just take it back off.',NER:'This is a small chemical tag, not a bulky helix-kinking lesion.',MMR:'Nothing was mis-copied. A chemical changed existing DNA.'},
+  mut:{top:{4:'A'},bot:{4:'T'}},
+  mutation:'Methylated G pairs with T. After two rounds of copying, G:C became A:T. That is a transition mutation, exactly what Auerbach saw with mustard gas.',
+  takeaway:'MGMT is a "suicide" enzyme: it fixes one lesion and is destroyed.'},
+ {title:'Broken in a neuron',where:'Brain neuron · G1, will never divide again',
+  story:'A free radical cut through both strands. Neurons sit permanently in G1, so there is no sister chromatid.',
+  top:'GATCCTAGGACTTG',lesion:{type:'break',i:6},path:'NHEJ',steps:S.nhej,
+  why:{HR:'HR copies from a sister chromatid, and a G1 neuron does not have one. HR only works after replication (S/G2).',BER:'Both strands are cut. Single-base repair cannot reconnect a broken chromosome.',NER:'Both strands are cut. There is no intact strand to use as a template.'},
+  mutation:'The broken chromosome stayed in two pieces. Genes on the loose fragment can be lost, and the neuron may trigger cell death.',
+  takeaway:'NHEJ is fast and works anytime, but it usually costs a few bases. Duct tape is fast.'},
+ {title:'Broken in a dividing cell',where:'Skin stem cell · G2, DNA already copied',
+  story:'X-rays caused a double-strand break. This cell has already replicated, so an identical sister chromatid sits right next to the damage.',
+  top:'CTGAAGTCCGATAC',lesion:{type:'break',i:6},path:'HR',alt:{NHEJ:'NHEJ would glue it, but it is error-prone. With a sister chromatid available, HR gives an exact fix.'},steps:S.hr,sisterLabel:'Sister chromatid',
+  why:{BER:'Both strands are cut. Single-base repair cannot reconnect a broken chromosome.',NER:'Both strands are cut. There is no intact strand to use as a template.',MMR:'Mismatch repair fixes typos, not broken chromosomes.'},
+  mutation:'The cell entered mitosis with a broken chromosome. A fragment was left out of one daughter cell. BRCA1/2 mutations break HR, which is why those cells accumulate damage.',
+  takeaway:'HR is slow and needs S/G2, but it is accurate. A backup copy is accurate.'},
+ {title:'A base fell off',where:'Human muscle cell · body temperature',
+  story:'Depurination: the bond holding a guanine to its sugar broke. The backbone is intact but the base is gone.',
+  top:'AGCTTGACAGTCCA',lesion:{type:'base',strand:'top',i:5,show:'∅',tag:'AP'},path:'BER',span:[5,5],steps:S.berAP,
+  why:{NER:'Overkill. One missing base needs a one-brick fix.',DR:'There is nothing to reverse. The base is gone and has to be replaced.',MMR:'Nothing was mis-copied. The base fell off on its own.'},
+  mut:{top:{5:'A'},bot:{5:'T'}},
+  mutation:'Polymerase reached an empty spot and inserted an A by default. G:C became A:T in one daughter cell.',
+  takeaway:'Lindahl’s estimate: about 10,000 bases lost per cell per day. DNA is not stable; it is maintained.'},
+ {title:'CRISPR: knock it out',where:'Rice cell in a gene-editing lab',
+  story:'A researcher wants to break a disease-susceptibility gene. Cas9 made a clean double-strand cut. No template was supplied.',
+  top:'ATGGCCTTAGGCAT',lesion:{type:'break',i:6},path:'NHEJ',steps:S.nhej,
+  why:{HR:'There is no donor template, and the goal is to break the gene. The small errors from end joining are exactly what the researcher wants.',BER:'Both strands are cut. Single-base repair cannot reconnect it.'},
+  mutation:'Cas9 kept re-cutting and the cell never sealed the break. The edit failed this time.',
+  takeaway:'Cas9 only cuts. NHEJ’s small insertions or deletions cause a frameshift, and the gene is knocked out.'},
+ {title:'CRISPR: a precise fix',where:'Tomato cell in a gene-editing lab',
+  story:'This time the researcher supplied a donor template carrying the exact sequence she wants written in. Cas9 cut, and the template is floating nearby.',
+  top:'TCCAGGTAACGCAT',lesion:{type:'break',i:6},path:'HR',steps:S.hr,sisterLabel:'Donor template',
+  why:{NHEJ:'NHEJ ignores the template and glues the ends. You would get a knockout, not the precise edit.',BER:'Both strands are cut. Single-base repair cannot reconnect it.'},
+  mutView:'nhej',
+  mutation:'NHEJ got there first. The ends were glued with a small deletion, so the cell has a knockout instead of the precise edit. This is the main reason precise CRISPR editing is inefficient.',
+  takeaway:'HR with a template is how CRISPR makes precise edits.'}
+];
+
+const ROUND_TIME=75;
+let st=fresh();
+function fresh(){return{screen:'intro',team:'',clock:true,r:0,score:0,phase:'diagnose',tried:[],stepDone:0,order:[],note:null,tLeft:ROUND_TIME,log:[],roundPts:0,usedAlt:false,wrongTaps:0}}
+
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+
+/* ---------- duplex model ---------- */
+function view(sc,s,mutated){
+  const top=[...sc.top], bot=[...(sc.bot||comp(sc.top))];
+  if(sc.lesion.type==='mismatch') bot[sc.lesion.i]=COMP[sc.top[sc.lesion.i]];
+  const T=top.map(c=>({c,cls:''})), B=bot.map(c=>({c,cls:''}));
+  const L=sc.lesion, N=sc.steps.length, R=L.strand==='bot'?B:T;
+  let brk=null, sister=null, drop=[], note='';
+  const markLesion=ring=>{
+    if(L.type==='dimer'){T[L.i].cls='lesion dimerL';T[L.i+1].cls='lesion';if(ring){T[L.i].cls+=' ring';T[L.i+1].cls+=' ring'}}
+    else if(L.type==='break'){brk=L.i}
+    else{R[L.i]={c:L.show,cls:'lesion'+(ring?' ring':''),tag:L.tag}}
+  };
+  const nhejJoin=()=>{drop=[L.i,L.i+1];T[L.i-1].cls=B[L.i-1].cls='indel';T[L.i+2].cls=B[L.i+2].cls='indel';note='2 bp deleted at the junction'};
+  if(mutated){
+    if(sc.mut){for(const[k,v] of Object.entries(sc.mut.top))T[k]={c:v,cls:'mut'};for(const[k,v] of Object.entries(sc.mut.bot))B[k]={c:v,cls:'mut'};note='Wrong pair copied into both strands'}
+    else if(sc.mutView==='nhej'){nhejJoin();note='NHEJ joined the ends: knockout, not an edit'}
+    else{brk=L.i;T.forEach(x=>x.cls='dim');B.forEach(x=>x.cls='dim');note='Break never repaired'}
+    return{T,B,brk,sister,drop,note};
+  }
+  const p=sc.path;
+  if(p==='BER'||p==='NER'||p==='MMR'){
+    const[a,b]=sc.span, fixed=L.strand==='bot'?bot:top;
+    if(s<=1) markLesion(s===1);
+    else for(let j=a;j<=b;j++){
+      if(s===2){R[j]={c:'',cls:'gap'}}
+      else{R[j]={c:fixed[j],cls:s>=N?'sealed':'new'};if(s===3&&j===b)R[j].cls+=' nick'}
+    }
+    if(s===2) note=p==='BER'?'1 nucleotide removed':p==='NER'?'Damaged stretch excised':'New-strand stretch removed';
+  } else if(p==='DR'){
+    if(s<N){markLesion(s>=1);if(s>=2){(L.type==='dimer'?[T[L.i],T[L.i+1]]:[R[L.i]]).forEach(x=>x.cls+=' charge')}}
+    else{(L.type==='dimer'?[L.i,L.i+1]:[L.i]).forEach(j=>{T[j]={c:top[j],cls:'sealed'}});note='Restored in place, nothing cut'}
+  } else if(p==='NHEJ'){
+    const k=L.i;
+    if(s<N){brk=k;
+      if(s>=1)[T[k],T[k+1],B[k],B[k+1]].forEach(x=>x.cls='ring');
+      if(s>=2){T[k]=T[k+1]=B[k]=B[k+1]=null;[k,k+1].forEach(j=>{T[j]={c:'',cls:'gap'};B[j]={c:'',cls:'gap'}});note='Ends trimmed'}
+    } else nhejJoin();
+  } else if(p==='HR'){
+    const k=L.i, tg=[k-2,k-1,k], bg=[k+1,k+2,k+3];
+    if(s===0) brk=k;
+    if(s>=1&&s<3){brk=k;tg.forEach(j=>T[j]={c:'',cls:'gap'});bg.forEach(j=>B[j]={c:'',cls:'gap'});note='Ends resected into single-strand tails'}
+    if(s>=2) sister=top.map(c=>({c,cls:'sis'}));
+    if(s>=3){tg.forEach(j=>T[j]={c:top[j],cls:s>=N?'sealed':'new'});bg.forEach(j=>B[j]={c:bot[j],cls:s>=N?'sealed':'new'});note=s>=N?'Restored exactly from the template':'Copied from the template'}
+  }
+  return{T,B,brk,sister,drop,note};
+}
+function cellHTML(x){if(!x)return'<div class="cell hidden"></div>';return`<div class="cell ${x.cls}">${esc(x.c)}${x.tag?`<sup>${esc(x.tag)}</sup>`:''}</div>`}
+function duplexHTML(sc,v){
+  const n=sc.top.length;let cols='';
+  for(let j=0;j<n;j++){
+    if(v.drop.includes(j))continue;
+    cols+=`<div class="col">${cellHTML(v.T[j])}${cellHTML(v.B[j])}${v.sister?cellHTML(v.sister[j]):''}</div>`;
+    if(v.brk===j)cols+='<div class="spacer" aria-hidden="true"></div>';
+  }
+  const ends=a=>`<div class="end">${a.map(x=>`<span>${x}</span>`).join('')}</div>`;
+  const l=v.sister?['5′','3′','5′']:['5′','3′'], r=v.sister?['3′','5′','3′']:['3′','5′'];
+  return`<div class="scroll"><div class="duplex" role="img" aria-label="DNA duplex">${ends(l)}${cols}${ends(r)}</div></div>`;
+}
+
+/* ---------- screens ---------- */
+const app=document.getElementById('app');
+function topbar(){
+  const inGame=st.screen==='game';
+  return`<div class="bar"><div class="brand"><div class="mark"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M6 3c0 6 12 6 12 12s-12 0-12 6"/><path d="M18 3c0 6-12 6-12 12s12 0 12 6" opacity=".55"/><path d="M8 7h8M8 17h8"/></svg></div><h1>Repair Crew</h1></div>
+  <div class="stats">${inGame?`<span class="chip">Round <b>${st.r+1}</b>/${ROUNDS.length}</span><span class="chip">Score <b>${st.score}</b></span>`:''}
+  <button class="chip toggle" id="clockBtn" aria-pressed="${st.clock}">Fork clock: <b>${st.clock?'on':'off'}</b></button>
+  ${cap.owner&&st.screen!=='game'?`<button class="chip" id="gbBtn">${st.screen==='gradebook'?'Back to game':'Gradebook'}</button>`:''}</div></div>`;
+}
+function saveLine(){
+  if(cap.ready===false)return'<div class="save"><i></i>Connecting to the gradebook…</div>';
+  if(cap.writable)return`<div class="save on"><i></i>${cap.lastSave==='error'?'Last save failed. Keep playing; your completion code still counts.':'Scores save to your instructor’s gradebook.'}</div>`;
+  return'<div class="save off"><i></i>Not saving here. Submit the completion code at the end.</div>';
+}
+function render(){
+  if(st.screen==='intro')app.innerHTML=topbar()+introHTML();
+  else if(st.screen==='game')app.innerHTML=topbar()+gameHTML();
+  else if(st.screen==='gradebook')app.innerHTML=topbar()+gradebookHTML();
+  else if(st.screen==='checker')app.innerHTML=topbar()+checkerHTML();
+  else app.innerHTML=topbar()+endHTML();
+  bind();
+}
+function introHTML(){
+  return`<section class="hero"><span class="eyebrow">BIOL 2153 Recitation · DNA Repair &amp; Mutation</span>
+  <h2>You are the repair machinery.</h2>
+  <p>Every cell takes thousands of hits a day. In each round a cell gets damaged. Your job is to read the damage, send the right crew, and run the repair steps in order before the replication fork arrives and copies the lesion into a permanent mutation.</p></section>
+  <section class="panel"><h3>Your crew</h3><div class="crew">${Object.values(CREW).map(c=>`<div class="crewcard"><span class="ab">${c.ab} · ${c.role}</span><span class="nm">${c.nm}</span><span class="fx">${c.fx}</span></div>`).join('')}</div></section>
+  <section class="panel"><h3>How a round works</h3><ol class="rules">
+   <li><b>Diagnose.</b> Read the case and the DNA, then send one crew. Wrong crews get crossed off.</li>
+   <li><b>Repair.</b> Tap the steps in the order they happen. Most cut-and-patch jobs follow Recognize, Remove, Resynthesize, Seal.</li>
+   <li><b>Beat the fork.</b> With the fork clock on, you have ${ROUND_TIME} seconds. If replication arrives first, the damage becomes a mutation.</li></ol>
+   <p class="muted" style="margin:0">10 rounds, up to 15 points each. You get a completion code at the end.</p></section>
+  <form class="form" id="startForm"><label for="team">Your full name, as it appears on Moodle<input id="team" name="team" required maxlength="60" autocomplete="name" placeholder="e.g. Maria Thibodeaux" value="${esc(st.team)}"></label><button class="primary" type="submit">Start round 1</button></form>
+  ${saveLine()}`;
+}
+function gameHTML(){
+  const sc=ROUNDS[st.r];
+  const mutated=st.phase==='mutated';
+  const v=view(sc,st.stepDone,mutated);
+  const frac=st.tLeft/ROUND_TIME;
+  let h=`<section class="case"><span class="where">${esc(sc.where)}</span><h2>${esc(sc.title)}</h2><p>${esc(sc.story)}</p></section>`;
+  if(st.clock&&(st.phase==='diagnose'||st.phase==='repair'))h+=`<div class="clock"><div class="lbl"><span>Replication fork approaching</span><span id="tl">${Math.ceil(st.tLeft)} s</span></div><div class="track"><div class="fill${frac<.3?' late':''}" id="tf" style="width:${(1-frac)*100}%"></div></div></div>`;
+  h+=`<section class="stage"><div class="cap"><span>${sc.sisterLabel&&v.sister?'Top two rows: damaged DNA · third row: '+esc(sc.sisterLabel):'Double-stranded DNA'}</span><span>${esc(v.note||'')}</span></div>${duplexHTML(sc,v)}
+   <div class="legend"><span><i style="background:var(--amber)"></i>Damage</span><span><i style="background:var(--teal)"></i>New DNA</span><span><i style="border:2px dashed var(--line)"></i>Gap</span><span><i style="background:var(--red)"></i>Mutation</span></div></section>`;
+  if(st.note)h+=`<div class="note ${st.note.kind}"><b>${esc(st.note.head)}</b>${esc(st.note.body)}</div>`;
+  if(st.phase==='diagnose'){
+    h+=`<section class="panel"><h3>Which crew responds?</h3><div class="crewbtns">${Object.entries(CREW).map(([k,c])=>`<button class="crewbtn" data-crew="${k}" ${st.tried.includes(k)?'disabled':''}><span class="ab">${c.ab}</span><span class="nm">${c.nm}</span></button>`).join('')}</div></section>`;
+  } else if(st.phase==='repair'){
+    const steps=sc.steps;
+    h+=`<section class="panel"><h3>${esc(CREW[sc.path].nm)}: tap step ${st.stepDone+1} of ${steps.length}</h3>`;
+    if(st.stepDone)h+=`<ol class="done-list">${steps.slice(0,st.stepDone).map((s,i)=>`<li><span class="n">${i+1}</span><span><b>${s[0]}.</b> ${esc(s[1])}</span></li>`).join('')}</ol>`;
+    h+=`<div class="steps">${st.order.filter(i=>i>=st.stepDone).map(i=>`<button class="stepbtn" data-step="${i}"><span class="k">${steps[i][0]}</span><span>${esc(steps[i][1])}</span></button>`).join('')}</div></section>`;
+  } else {
+    const win=st.phase==='done';
+    h+=`<section class="result ${win?'win':'lose'}"><span class="eyebrow" style="color:${win?'var(--green)':'var(--red)'}">${win?'Repaired':'The fork won'} · +${st.roundPts} points</span>
+    <h3>${win?'Sequence saved.':'The lesion was copied.'}</h3><p>${esc(win?sc.takeaway:sc.mutation)}</p>${win?'':`<p class="muted">Correct crew: ${esc(CREW[sc.path].nm)}.</p>`}</section>
+    <button class="primary" id="nextBtn">${st.r+1<ROUNDS.length?'Next round':'See results'}</button>`;
+  }
+  return h;
+}
+function endHTML(){
+  const max=ROUNDS.length*15, saved=st.log.filter(l=>l.win).length;
+  return`<section class="hero"><span class="eyebrow">Shift report · ${esc(st.team)}</span><div class="big">${st.score}<span class="muted" style="font-size:24px"> / ${max}</span></div><p>${saved} of ${ROUNDS.length} genomes saved before the fork arrived.</p></section>
+  <section class="codebox"><span class="eyebrow">Completion code</span><div class="code">${completionCode(st.team,st.score)}</div><p class="muted" style="margin:0">Submit this code with your name on Moodle. It only matches your name and this score.</p>${saveLine()}</section>
+  <section class="stage"><div class="scroll"><table><thead><tr><th>#</th><th>Case</th><th>First crew sent</th><th>Outcome</th><th style="text-align:right">Pts</th></tr></thead><tbody>
+  ${st.log.map((l,i)=>`<tr><td class="num">${i+1}</td><td>${esc(ROUNDS[i].title)}</td><td>${esc(l.first)}</td><td><span class="tag ${l.win?'win':'lose'}">${l.win?'Repaired':'Mutation'}</span></td><td class="num">${l.pts}</td></tr>`).join('')}
+  </tbody></table></div></section>
+  <section class="panel"><h3>Recitation write-up</h3><p class="muted" style="margin:0">Answer each in 3–4 sentences, using the concepts from class.</p><ol class="q">
+   <li>The soybean leaf and the farmer’s skin cell had the same thymine dimer from the same sun. Explain why they used different repair crews, and what that means for people with xeroderma pigmentosum.</li>
+   <li>A neuron and a dividing skin stem cell both had a double-strand break. Which one is more likely to end up with a small deletion? Explain using what each repair pathway needs.</li>
+   <li>Pick a round where the fork arrived first (or imagine one). Explain why the damage became a mutation and why repair enzymes can no longer find it.</li>
+   <li>Two CRISPR experiments used the same Cas9 cut but got different results. Explain how the cell’s choice of repair pathway decided whether the gene was knocked out or precisely edited.</li></ol></section>
+  <button class="ghost" id="againBtn">Play again</button>`;
+}
+
+/* ---------- completion code ---------- */
+function completionCode(name,score){
+  const s=`${String(name).toLowerCase().replace(/\s+/g,' ').trim()}|${score}|biol2153-repair-crew`;
+  let h=2166136261;for(const ch of s){h^=ch.codePointAt(0);h=Math.imul(h,16777619)>>>0}
+  return`RC-${score}-${h.toString(36).toUpperCase().padStart(7,'0').slice(-5)}`;
+}
+
+/* ---------- gradebook (instructor) ---------- */
+const gb={rows:[],sort:'name',verify:null,status:'loading'};
+const profiles={};
+function fmtDate(iso){if(!iso)return'';const d=new Date(iso);return d.toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}
+function gradebookHTML(){
+  const rows=gb.rows.slice().sort((a,b)=>gb.sort==='best'?(b.best||0)-(a.best||0):gb.sort==='recent'?String(b.updatedAt).localeCompare(String(a.updatedAt)):String(a.name||'').localeCompare(String(b.name||'')));
+  const done=rows.filter(r=>r.finishedAttempts>0), avg=done.length?Math.round(done.reduce((s,r)=>s+(r.best||0),0)/done.length):0;
+  let h=`<section class="hero"><span class="eyebrow">Instructor view · only you can see this</span><h2>Gradebook</h2><p class="muted">Each student who plays while signed in saves here automatically, round by round. Students who can’t save will give you a completion code instead; check it below.</p></section>
+  <div class="kpis"><div class="kpi"><div class="v">${rows.length}</div><div class="l">Students started</div></div><div class="kpi"><div class="v">${done.length}</div><div class="l">Finished</div></div><div class="kpi"><div class="v">${avg}<span class="muted" style="font-size:16px"> / 150</span></div><div class="l">Average best</div></div></div>
+  <section class="stage"><div class="row" style="justify-content:space-between"><div class="row" style="flex:1 1 auto"><button class="ghost" data-sort="name" aria-pressed="${gb.sort==='name'}">By name</button><button class="ghost" data-sort="best" aria-pressed="${gb.sort==='best'}">By best score</button><button class="ghost" data-sort="recent" aria-pressed="${gb.sort==='recent'}">Most recent</button></div>${cap.downloads?'<button class="primary" id="csvBtn">Download CSV</button>':''}</div>`;
+  if(gb.status==='loading')h+='<div class="empty">Loading scores…</div>';
+  else if(!rows.length)h+='<div class="empty">No scores yet. Rows appear here as soon as a student finishes their first round.</div>';
+  else h+=`<div class="scroll"><table><thead><tr><th>Student</th><th style="text-align:right">Best</th><th style="text-align:right">Latest</th><th>Latest attempt</th><th style="text-align:right">Tries</th><th>Last played</th></tr></thead><tbody>${rows.map(r=>{const acct=(profiles[r.id]&&profiles[r.id].name)||'';const c=r.current||{};return`<tr><td>${esc(r.name||'(no name)')}${acct&&acct!==r.name?`<span class="sub">Claude account: ${esc(acct)}</span>`:''}</td><td class="num"><b>${r.best??'–'}</b></td><td class="num">${c.score??'–'}</td><td>${c.finished?'<span class="tag win">Finished</span>':`<span class="tag lose">Round ${c.roundsDone||0}/10</span>`}<span class="sub">${c.saved??0} repaired · ${c.mutations??0} mutations</span></td><td class="num">${r.attempts||0}</td><td>${fmtDate(r.updatedAt)}</td></tr>`}).join('')}</tbody></table></div>`;
+  h+=`</section>
+  <section class="codebox"><h3 style="font-size:18px">Check a completion code</h3><form class="row" id="verifyForm"><label for="vName">Student name<input id="vName" required></label><label for="vCode">Code<input id="vCode" required placeholder="RC-112-ABC12"></label><button class="primary" type="submit">Check</button></form>${gb.verify?`<div class="note ${gb.verify.ok?'good':'bad'}"><b>${gb.verify.ok?'Valid code':'Does not match'}</b>${esc(gb.verify.msg)}</div>`:''}</section>`;
+  return h;
+}
+function checkerHTML(){
+  return`<section class="hero"><span class="eyebrow">Instructor tool</span><h2>Check a completion code</h2><p class="muted">Paste the name and code a student submitted on Moodle. The code only matches the exact name and score it was made for.</p></section>
+  <section class="codebox"><form class="row" id="verifyForm"><label for="vName">Student name<input id="vName" required></label><label for="vCode">Code<input id="vCode" required placeholder="RC-112-ABC12"></label><button class="primary" type="submit">Check</button></form>${gb.verify?`<div class="note ${gb.verify.ok?'good':'bad'}"><b>${gb.verify.ok?'Valid code':'Does not match'}</b>${esc(gb.verify.msg)}</div>`:''}</section>`;
+}
+function verifyCode(name,code){
+  const m=/^RC-(\d{1,3})-([A-Z0-9]{5})$/.exec(code.trim().toUpperCase());
+  if(!m)return{ok:false,msg:'Codes look like RC-112-ABC12.'};
+  const score=+m[1];
+  return completionCode(name,score)===code.trim().toUpperCase()?{ok:true,msg:`${name} scored ${score} / 150.`}:{ok:false,msg:'The code was made for a different name or score. Check the spelling of the name the student typed.'};
+}
+function csvExport(){
+  const q=v=>`"${String(v??'').replace(/"/g,'""')}"`;
+  const head=['Name','Best score','Latest score','Latest finished','Rounds done','Repaired','Mutations','Attempts','Last played'];
+  const lines=[head.map(q).join(',')].concat(gb.rows.slice().sort((a,b)=>String(a.name).localeCompare(String(b.name))).map(r=>{const c=r.current||{};return[r.name,r.best,c.score,c.finished?'yes':'no',c.roundsDone,c.saved,c.mutations,r.attempts,r.updatedAt].map(q).join(',')}));
+  cap.downloads.save({filename:'repair-crew-scores.csv',data:lines.join('\n')}).catch(()=>{});
+}
+
+/* ---------- saving (students) ---------- */
+const cap={ready:false,db:null,user:null,uid:null,owner:false,writable:false,downloads:null,mine:null,lastSave:null,unsub:null};
+let saveChain=Promise.resolve();
+function startAttempt(){
+  if(!cap.writable)return;
+  const m=cap.mine||{best:null,attempts:0,history:[]};
+  m.attempts=(m.attempts||0)+1;
+  m.current={id:Date.now(),startedAt:new Date().toISOString(),score:0,roundsDone:0,saved:0,mutations:0,finished:false,rounds:[]};
+  cap.mine=m;persist();
+}
+function recordRound(){
+  if(!cap.writable||!cap.mine||!cap.mine.current)return;
+  const c=cap.mine.current;
+  c.rounds=st.log.map((l,i)=>({round:i+1,case:ROUNDS[i].title,firstCrew:l.first,repaired:l.win,points:l.pts}));
+  c.roundsDone=st.log.length;c.score=st.score;c.saved=st.log.filter(l=>l.win).length;c.mutations=c.roundsDone-c.saved;
+  if(c.roundsDone===ROUNDS.length&&!c.finished){
+    c.finished=true;c.finishedAt=new Date().toISOString();c.code=completionCode(st.team,st.score);
+    cap.mine.best=Math.max(cap.mine.best??0,st.score);
+    cap.mine.history=(cap.mine.history||[]).concat({score:st.score,finishedAt:c.finishedAt}).slice(-10);
+  }
+  persist();
+}
+function persist(){
+  const body={...cap.mine,name:st.team,updatedAt:new Date().toISOString()};
+  body.finishedAttempts=(body.history||[]).length;
+  saveChain=saveChain.then(()=>cap.db.doc('scores/'+cap.uid).set(body)).then(()=>{cap.lastSave='ok'},e=>{cap.lastSave='error';if(e&&e.code==='invalid_argument'){cap.writable=false}if(st.screen!=='game')render()});
+}
+async function initCaps(){
+  const c=window.claude;
+  if(!c||!c.use){cap.ready=true;if(st.screen==='intro')render();return}
+  const [db,user,dl]=await Promise.all([c.use('db'),c.use('user'),c.use('downloads')]);
+  cap.db=db;cap.user=user;cap.downloads=dl;
+  if(user){cap.owner=await user.isOwner();cap.uid=await user.id();}
+  if(db&&cap.uid){
+    const can=user?await user.can('data.write'):null;
+    cap.writable=can!==false;
+    try{const snap=await db.doc('scores/'+cap.uid).get();if(snap.exists)cap.mine=snap.data()}catch(e){}
+  }
+  if(cap.owner&&db){
+    cap.unsub=db.collection('scores').onSnapshot(snap=>{
+      gb.rows=snap.docs.map(d=>({id:d.id,...d.data()}));gb.status='ready';
+      const need=gb.rows.map(r=>r.id).filter(id=>!(id in profiles));
+      if(need.length&&user){need.forEach(id=>profiles[id]=null);user.profiles(need).then(ps=>{Object.assign(profiles,ps);if(st.screen==='gradebook')render()})}
+      if(st.screen==='gradebook')render();
+    },()=>{gb.status='ready';if(st.screen==='gradebook')render()});
+  }
+  cap.ready=true;
+  if(st.screen!=='game')render();
+}
+
+/* ---------- logic ---------- */
+let timer=null;
+function startTimer(){stopTimer();let last=performance.now();timer=setInterval(()=>{const now=performance.now();if(st.clock&&(st.phase==='diagnose'||st.phase==='repair')){st.tLeft=Math.max(0,st.tLeft-(now-last)/1000);const tl=document.getElementById('tl'),tf=document.getElementById('tf');if(tl)tl.textContent=Math.ceil(st.tLeft)+' s';if(tf){tf.style.width=(1-st.tLeft/ROUND_TIME)*100+'%';tf.classList.toggle('late',st.tLeft/ROUND_TIME<.3)}if(st.tLeft<=0)forkWins()}last=now},100)}
+function stopTimer(){if(timer)clearInterval(timer);timer=null}
+function beginRound(){Object.assign(st,{phase:'diagnose',tried:[],stepDone:0,order:[],note:null,tLeft:ROUND_TIME,roundPts:0,usedAlt:false,wrongTaps:0,first:null});render();startTimer();window.scrollTo({top:0})}
+function forkWins(){st.phase='mutated';st.note=null;finishRound(false)}
+function finishRound(win){
+  if(win)st.roundPts+=Math.max(0,5-st.wrongTaps);
+  st.score+=st.roundPts;st.log[st.r]={win,pts:st.roundPts,first:st.first?CREW[st.first].ab:'none'};
+  recordRound();
+  render();
+}
+function pickCrew(k){
+  const sc=ROUNDS[st.r];if(!st.first)st.first=k;
+  if(k===sc.path){
+    const pts=st.tried.length===0?10:st.tried.length===1?5:2;
+    st.roundPts+=pts;
+    st.note={kind:'good',head:`Right call: ${CREW[k].role}.`,body:CREW[k].fx};
+    toRepair();
+  } else if(sc.alt&&sc.alt[k]){
+    st.roundPts+=st.tried.length===0?6:3;st.usedAlt=true;
+    st.note={kind:'ok',head:'That works, but there is a better crew for this cell.',body:sc.alt[k]+` Running ${CREW[sc.path].nm} instead.`};
+    toRepair();
+  } else {
+    st.tried.push(k);
+    st.note={kind:'bad',head:`Not the ${CREW[k].role.toLowerCase()}.`,body:(sc.why&&sc.why[k])||`${CREW[k].nm} handles: ${CREW[k].fx}`};
+    render();
+  }
+}
+function toRepair(){const n=ROUNDS[st.r].steps.length;let o;do{o=shuffle([...Array(n).keys()])}while(n>1&&o.every((v,i)=>v===i));st.order=o;st.phase='repair';render()}
+function tapStep(i,btn){
+  const sc=ROUNDS[st.r];
+  if(i===st.stepDone){st.stepDone++;st.note=null;
+    if(st.stepDone===sc.steps.length){st.phase='done';finishRound(true)}else render();
+  } else {st.wrongTaps++;btn.classList.remove('shake');void btn.offsetWidth;btn.classList.add('shake');
+    st.note={kind:'bad',head:'Not yet.',body:`What has to happen before "${sc.steps[i][0]}"? Look at the DNA: what does it need right now?`};
+    const ex=app.querySelector('.note');const html=`<div class="note bad"><b>Not yet.</b>${esc(st.note.body)}</div>`;
+    if(ex)ex.outerHTML=html;else app.querySelector('.stage').insertAdjacentHTML('afterend',html);}
+}
+function bind(){
+  const cb=document.getElementById('clockBtn');if(cb)cb.onclick=()=>{st.clock=!st.clock;render()};
+  const f=document.getElementById('startForm');if(f)f.onsubmit=e=>{e.preventDefault();st.team=document.getElementById('team').value.trim()||'Repair Crew';st.screen='game';st.r=0;st.score=0;st.log=[];startAttempt();beginRound()};
+  const gbb=document.getElementById('gbBtn');if(gbb)gbb.onclick=()=>{st.screen=st.screen==='gradebook'?(st.log.length===ROUNDS.length?'end':'intro'):'gradebook';render();window.scrollTo({top:0})};
+  app.querySelectorAll('[data-sort]').forEach(b=>b.onclick=()=>{gb.sort=b.dataset.sort;render()});
+  const csv=document.getElementById('csvBtn');if(csv)csv.onclick=csvExport;
+  const vf=document.getElementById('verifyForm');if(vf)vf.onsubmit=e=>{e.preventDefault();gb.verify=verifyCode(document.getElementById('vName').value,document.getElementById('vCode').value);const n=document.getElementById('vName').value,c=document.getElementById('vCode').value;render();document.getElementById('vName').value=n;document.getElementById('vCode').value=c};
+  app.querySelectorAll('[data-crew]').forEach(b=>b.onclick=()=>pickCrew(b.dataset.crew));
+  app.querySelectorAll('[data-step]').forEach(b=>b.onclick=()=>tapStep(+b.dataset.step,b));
+  const nb=document.getElementById('nextBtn');if(nb)nb.onclick=()=>{if(st.r+1<ROUNDS.length){st.r++;beginRound()}else{stopTimer();st.screen='end';render();window.scrollTo({top:0})}};
+  const ab=document.getElementById('againBtn');if(ab)ab.onclick=()=>{const t=st.team,c=st.clock;st=fresh();st.team=t;st.clock=c;render()};
+}
+
+function start(data){
+  if(data&&data.st)st=data.st;
+  if(location.hash==='#instructor')st.screen='checker';
+  render();
+  if(st.screen==='game'&&(st.phase==='diagnose'||st.phase==='repair'))startTimer();
+  initCaps();
+}
+window.claude?.hot?.snapshot?.(()=>({st}));
+window.claude?.hot?.ready?window.claude.hot.ready(start):start(window.claude?.hot?.data??{});
+</script>
+</body></html>
