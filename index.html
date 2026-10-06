@@ -252,7 +252,7 @@ const ROUNDS=[
 
 const ROUND_TIME=75;
 let st=fresh();
-function fresh(){return{screen:'intro',team:'',clock:true,r:0,score:0,phase:'diagnose',tried:[],stepDone:0,order:[],note:null,tLeft:ROUND_TIME,log:[],roundPts:0,usedAlt:false,wrongTaps:0}}
+function fresh(){return{screen:'intro',team:'',clock:false,r:0,score:0,phase:'diagnose',tried:[],stepDone:0,order:[],note:null,tLeft:ROUND_TIME,log:[],roundPts:0,usedAlt:false,wrongTaps:0}}
 
 function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
@@ -322,7 +322,6 @@ function topbar(){
   const inGame=st.screen==='game';
   return`<div class="bar"><div class="brand"><div class="mark"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M6 3c0 6 12 6 12 12s-12 0-12 6"/><path d="M18 3c0 6-12 6-12 12s12 0 12 6" opacity=".55"/><path d="M8 7h8M8 17h8"/></svg></div><h1>Repair Crew</h1></div>
   <div class="stats">${inGame?`<span class="chip">Round <b>${st.r+1}</b>/${ROUNDS.length}</span><span class="chip">Score <b>${st.score}</b></span>`:''}
-  <button class="chip toggle" id="clockBtn" aria-pressed="${st.clock}">Fork clock: <b>${st.clock?'on':'off'}</b></button>
   ${cap.owner&&st.screen!=='game'?`<button class="chip" id="gbBtn">${st.screen==='gradebook'?'Back to game':'Gradebook'}</button>`:''}</div></div>`;
 }
 function saveLine(){
@@ -341,12 +340,12 @@ function render(){
 function introHTML(){
   return`<section class="hero"><span class="eyebrow">BIOL 2153 Recitation · DNA Repair &amp; Mutation</span>
   <h2>You are the repair machinery.</h2>
-  <p>Every cell takes thousands of hits a day. In each round a cell gets damaged. Your job is to read the damage, send the right crew, and run the repair steps in order before the replication fork arrives and copies the lesion into a permanent mutation.</p></section>
+  <p>Every cell takes thousands of hits a day. In each round a cell gets damaged. Your job is to read the damage, send the right crew, and run the repair steps in order. Take your time: there is no clock.</p></section>
   <section class="panel"><h3>Your crew</h3><div class="crew">${Object.values(CREW).map(c=>`<div class="crewcard"><span class="ab">${c.ab} · ${c.role}</span><span class="nm">${c.nm}</span><span class="fx">${c.fx}</span></div>`).join('')}</div></section>
   <section class="panel"><h3>How a round works</h3><ol class="rules">
    <li><b>Diagnose.</b> Read the case and the DNA, then send one crew. Wrong crews get crossed off.</li>
    <li><b>Repair.</b> Tap the steps in the order they happen. Most cut-and-patch jobs follow Recognize, Remove, Resynthesize, Seal.</li>
-   <li><b>Beat the fork.</b> With the fork clock on, you have ${ROUND_TIME} seconds. If replication arrives first, the damage becomes a mutation.</li></ol>
+   <li><b>Read the feedback.</b> Wrong choices explain why that crew doesn\u2019t fit, so you learn as you go.</li></ol>
    <p class="muted" style="margin:0">10 rounds, up to 15 points each. You get a completion code at the end.</p></section>
   <form class="form" id="startForm"><label for="team">Your full name, as it appears on Moodle<input id="team" name="team" required maxlength="60" autocomplete="name" placeholder="e.g. Maria Thibodeaux" value="${esc(st.team)}"></label><button class="primary" type="submit">Start round 1</button></form>
   ${saveLine()}`;
@@ -378,7 +377,7 @@ function gameHTML(){
 }
 function endHTML(){
   const max=ROUNDS.length*15, saved=st.log.filter(l=>l.win).length;
-  return`<section class="hero"><span class="eyebrow">Shift report · ${esc(st.team)}</span><div class="big">${st.score}<span class="muted" style="font-size:24px"> / ${max}</span></div><p>${saved} of ${ROUNDS.length} genomes saved before the fork arrived.</p></section>
+  return`<section class="hero"><span class="eyebrow">Shift report · ${esc(st.team)}</span><div class="big">${st.score}<span class="muted" style="font-size:24px"> / ${max}</span></div><p>${saved} of ${ROUNDS.length} cells repaired.</p></section>
   <section class="codebox"><span class="eyebrow">Completion code</span><div class="code">${completionCode(st.team,st.score)}</div><p class="muted" style="margin:0">Submit this code with your name on Moodle. It only matches your name and this score.</p>${saveLine()}</section>
   <section class="stage"><div class="scroll"><table><thead><tr><th>#</th><th>Case</th><th>First crew sent</th><th>Outcome</th><th style="text-align:right">Pts</th></tr></thead><tbody>
   ${st.log.map((l,i)=>`<tr><td class="num">${i+1}</td><td>${esc(ROUNDS[i].title)}</td><td>${esc(l.first)}</td><td><span class="tag ${l.win?'win':'lose'}">${l.win?'Repaired':'Mutation'}</span></td><td class="num">${l.pts}</td></tr>`).join('')}
@@ -386,7 +385,7 @@ function endHTML(){
   <section class="panel"><h3>Recitation write-up</h3><p class="muted" style="margin:0">Answer each in 3–4 sentences, using the concepts from class.</p><ol class="q">
    <li>The soybean leaf and the farmer’s skin cell had the same thymine dimer from the same sun. Explain why they used different repair crews, and what that means for people with xeroderma pigmentosum.</li>
    <li>A neuron and a dividing skin stem cell both had a double-strand break. Which one is more likely to end up with a small deletion? Explain using what each repair pathway needs.</li>
-   <li>Pick a round where the fork arrived first (or imagine one). Explain why the damage became a mutation and why repair enzymes can no longer find it.</li>
+   <li>Pick one round and imagine DNA replication had reached the damage before repair finished. Explain why the damage would become a mutation and why repair enzymes could no longer find it.</li>
    <li>Two CRISPR experiments used the same Cas9 cut but got different results. Explain how the cell’s choice of repair pathway decided whether the gene was knocked out or precisely edited.</li></ol></section>
   <button class="ghost" id="againBtn">Play again</button>`;
 }
@@ -536,6 +535,7 @@ function bind(){
 
 function start(data){
   if(data&&data.st)st=data.st;
+  st.clock=false;
   if(location.hash==='#instructor')st.screen='checker';
   render();
   if(st.screen==='game'&&(st.phase==='diagnose'||st.phase==='repair'))startTimer();
